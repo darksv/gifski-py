@@ -1,0 +1,15 @@
+[package]
+name = "gifski-py"
+version = "0.1.0"
+authors = ["darksv <darek969-12@o2.pl>"]
+edition = "2018"
+
+[dependencies]
+pyo3 = { version = "0.13.2", features = ["extension-module"] }
+gifski = "1.4.0-alpha.1"
+imgref = "1.7.1"
+rgb = "0.8.25"
+
+[lib]
+name = "gifski"
+crate-type = ["cdylib"]
