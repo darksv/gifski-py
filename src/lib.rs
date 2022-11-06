@@ -28,7 +28,7 @@ fn new_encoder(width: u32, height: u32) -> Option<Handle> {
 
     let (collector, writer) = gifski::new(settings).ok()?;
     let (tx, rx) = std::sync::mpsc::channel();
-    let handle = std::thread::spawn(move || -> Result<Box<[u8]>, ()> {
+    let handle = std::thread::spawn(move || -> Result<_, ()> {
         let mut reporter = gifski::progress::NoProgress {};
         let mut encoded = Vec::new();
         writer.write(&mut encoded, &mut reporter).map_err(|_| ())?;
@@ -52,7 +52,7 @@ fn add_frame(handle: &mut Handle, data: PyObject, duration: f64) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let data = data.cast_as::<PyBytes>(py).unwrap().as_bytes();
-    assert!(data.len() == handle.width as usize * handle.height as usize * 4);
+    assert_eq!(data.len(), handle.width as usize * handle.height as usize * 4);
     assert!(handle.collector.is_some());
 
     let image = data
@@ -74,7 +74,6 @@ fn add_frame(handle: &mut Handle, data: PyObject, duration: f64) {
     handle.frames += 1;
 }
 
-
 #[pyfunction]
 fn finish(handle: &mut Handle) {
     handle.collector.take().unwrap();
@@ -89,7 +88,7 @@ fn get_result(handle: &mut Handle) -> PyResult<PyObject> {
         let handle = handle.handle.take().unwrap();
         let result = handle.join().unwrap();
         match result {
-            Ok(result) => Ok(PyBytes::new(py, &result).into()),
+            Ok(result) => Ok(PyBytes::new(py, &result).into_py()),
             Err(e) => Err(PyRuntimeError::new_err("some error"))
         }
     } else {
